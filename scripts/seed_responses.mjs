@@ -1,8 +1,9 @@
-import type { SurveyResponse } from './types'
-import { visibleAnswers } from '@/lib/survey/flow'
-import type { Answers } from '@/lib/survey/types'
+import { neon } from '@neondatabase/serverless';
+import * as dotenv from 'dotenv';
 
-function mulberry32(a: number) {
+dotenv.config({ path: '.env.local' });
+
+function mulberry32(a) {
   return function() {
     let t = a += 0x6D2B79F5;
     t = Math.imul(t ^ t >>> 15, t | 1);
@@ -11,22 +12,22 @@ function mulberry32(a: number) {
   }
 }
 
-const rng = mulberry32(12345) 
+const rng = mulberry32(12345);
 
-function randomItem<T>(arr: T[]): T {
-  return arr[Math.floor(rng() * arr.length)]
+function randomItem(arr) {
+  return arr[Math.floor(rng() * arr.length)];
 }
 
-function randomItems<T>(arr: T[], max: number): T[] {
-  const count = Math.floor(rng() * max) + 1
-  const shuffled = [...arr].sort(() => rng() - 0.5)
-  return shuffled.slice(0, count)
+function randomItems(arr, max) {
+  const count = Math.floor(rng() * max) + 1;
+  const shuffled = [...arr].sort(() => rng() - 0.5);
+  return shuffled.slice(0, count);
 }
 
-function randomDateInLast30Days(): string {
-  const now = new Date('2026-10-06T00:00:00Z').getTime() 
-  const past = now - Math.floor(rng() * 30 * 24 * 60 * 60 * 1000)
-  return new Date(past).toISOString()
+function randomDateInLast30Days() {
+  const now = new Date('2026-10-06T00:00:00Z').getTime();
+  const past = now - Math.floor(rng() * 30 * 24 * 60 * 60 * 1000);
+  return new Date(past).toISOString();
 }
 
 const FIRST_NAMES = ['Maria', 'Juan', 'Jose', 'Ana', 'Pedro', 'Luis', 'Carmen', 'Teresa', 'Antonio', 'Rosa', 'Carlos', 'Elena', 'Francisco', 'Isabel', 'Manuel', 'Miguel', 'Ricardo', 'Sofia']
@@ -44,66 +45,100 @@ const BUDGETS = ['Less than PHP 1 million', 'PHP 1–3 million', 'PHP 3–5 mill
 const POL_INTEREST = ['Very interested', 'Interested and would like more information', 'Open to evaluating it', 'Prefer traditional Ethernet LAN', 'Not familiar with POL', 'Not relevant to our projects']
 const BENEFITS = ['Lower CAPEX', 'Lower OPEX', 'Lower energy consumption', 'Reduced cabling', 'Reduced telecom room / rack space', 'Easier installation', 'Easier maintenance', 'Higher bandwidth', 'Scalability', 'Network reliability', 'Redundancy', 'Cybersecurity', 'Longer infrastructure lifetime', 'Simplified network management', 'Sustainability / ESG']
 
-export function generateMockResponses(count: number): SurveyResponse[] {
-  const responses: SurveyResponse[] = []
+function generateMockResponses(count) {
+  const responses = [];
   
   for (let i = 0; i < count; i++) {
-    const rawAnswers: Answers = {}
+    const rawAnswers = {};
     
-    rawAnswers['q1'] = randomItem(COMPANIES)
-    rawAnswers['q2'] = `${randomItem(FIRST_NAMES)} ${randomItem(LAST_NAMES)}`
-    rawAnswers['q3'] = randomItem(['Director of IT', 'General Manager', 'Chief Technology Officer', 'Operations Manager', 'Owner'])
-    rawAnswers['q4'] = `${rawAnswers['q2'].toString().split(' ')[0].toLowerCase()}@${rawAnswers['q1'].toString().toLowerCase().replace(/\s+/g, '')}.com`
+    rawAnswers['q1'] = randomItem(COMPANIES);
+    rawAnswers['q2'] = `${randomItem(FIRST_NAMES)} ${randomItem(LAST_NAMES)}`;
+    rawAnswers['q3'] = randomItem(['Director of IT', 'General Manager', 'Chief Technology Officer', 'Operations Manager', 'Owner']);
+    rawAnswers['q4'] = `${rawAnswers['q2'].toString().split(' ')[0].toLowerCase()}@${rawAnswers['q1'].toString().toLowerCase().replace(/\s+/g, '')}.com`;
     
-    const role = randomItem(ROLES)
-    rawAnswers['q5'] = role
+    const role = randomItem(ROLES);
+    rawAnswers['q5'] = role;
     if (role === 'Other') {
-      rawAnswers['q5_other'] = 'Freelance Consultant'
+      rawAnswers['q5_other'] = 'Freelance Consultant';
     }
 
-    rawAnswers['q6'] = randomItem(PROPERTY_COUNTS)
-    rawAnswers['q7'] = randomItems(PROPERTY_TYPES, 3)
-    rawAnswers['q12'] = randomItems(CHALLENGES, 4) // Was q8, now q12
+    rawAnswers['q6'] = randomItem(PROPERTY_COUNTS);
+    rawAnswers['q7'] = randomItems(PROPERTY_TYPES, 3);
+    rawAnswers['q12'] = randomItems(CHALLENGES, 4);
     
-    // Investment plan
-    const randPlan = rng()
-    if (randPlan < 0.25) rawAnswers['q13'] = 'Yes, investment is already approved'
-    else if (randPlan < 0.5) rawAnswers['q13'] = 'Investment is currently being evaluated'
-    else if (randPlan < 0.75) rawAnswers['q13'] = 'Possibly, but there are no specific plans yet'
-    else rawAnswers['q13'] = 'No investment currently planned'
+    const randPlan = rng();
+    if (randPlan < 0.25) rawAnswers['q13'] = 'Yes, investment is already approved';
+    else if (randPlan < 0.5) rawAnswers['q13'] = 'Investment is currently being evaluated';
+    else if (randPlan < 0.75) rawAnswers['q13'] = 'Possibly, but there are no specific plans yet';
+    else rawAnswers['q13'] = 'No investment currently planned';
 
-    // q14-q20 are in section 4 (active investment)
-    rawAnswers['q14'] = randomItems(TRIGGERS, 3)
-    rawAnswers['q17'] = randomItem(TIMING)
-    rawAnswers['q18'] = randomItem(STAGES)
-    rawAnswers['q19'] = randomItem(BUDGETS)
-
-    // Section 6 tech
-    rawAnswers['q26'] = randomItem(POL_INTEREST)
-    rawAnswers['q27'] = randomItems(BENEFITS, 5)
-
-    // Follow-up
-    const randFollow = rng()
-    if (randFollow < 0.3) {
-      rawAnswers['q41'] = 'Yes, please contact me'
-    } else if (randFollow < 0.5) {
-      rawAnswers['q41'] = 'I would first like to receive more information'
-    } else {
-      rawAnswers['q41'] = 'No, not at this time'
+    if (rawAnswers['q13'] === 'Yes, investment is already approved' || rawAnswers['q13'] === 'Investment is currently being evaluated') {
+      rawAnswers['q14'] = randomItems(TRIGGERS, 3);
+      rawAnswers['q17'] = randomItem(TIMING);
+      rawAnswers['q18'] = randomItem(STAGES);
+      rawAnswers['q19'] = randomItem(BUDGETS);
     }
 
-    // visibleAnswers will now strip out q14-q20 if q13 is "No investment currently planned"
-    const finalAnswers = visibleAnswers(rawAnswers) as Answers
+    rawAnswers['q26'] = randomItem(POL_INTEREST);
+    rawAnswers['q27'] = randomItems(BENEFITS, 5);
+
+    const randFollow = rng();
+    if (randFollow < 0.3) {
+      rawAnswers['q41'] = 'Yes, please contact me';
+    } else if (randFollow < 0.5) {
+      rawAnswers['q41'] = 'I would first like to receive more information';
+    } else {
+      rawAnswers['q41'] = 'No, not at this time';
+    }
 
     responses.push({
-      id: `resp_${1000 + i}`,
+      id: crypto.randomUUID(),
       submittedAt: randomDateInLast30Days(),
-      answers: finalAnswers
-    })
+      answers: rawAnswers
+    });
   }
 
-  // Sort by newest first
-  return responses.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+  return responses;
 }
 
-export const mockResponses = generateMockResponses(40)
+async function main() {
+  if (!process.env.DATABASE_URL) {
+    console.error('Error: DATABASE_URL not found in .env.local');
+    process.exit(1);
+  }
+
+  const sql = neon(process.env.DATABASE_URL);
+  
+  console.log('Generating mock data...');
+  const responses = generateMockResponses(40);
+  
+  console.log('Inserting into database...');
+  for (const r of responses) {
+    const company = r.answers.q1 || '';
+    const respondentName = r.answers.q2 || '';
+    const jobTitle = r.answers.q3 || '';
+    const email = r.answers.q4 || '';
+    const orgRole = r.answers.q5 || null;
+    const investmentPlan = r.answers.q13 || null;
+    const polInterest = r.answers.q26 || null;
+    const followUp = r.answers.q41 || null;
+
+    try {
+      await sql`
+        INSERT INTO survey_responses (
+          id, submitted_at, company, respondent_name, job_title, email, org_role, 
+          investment_plan, pol_interest, follow_up, answers
+        ) VALUES (
+          ${r.id}, ${r.submittedAt}, ${company}, ${respondentName}, ${jobTitle}, ${email}, ${orgRole},
+          ${investmentPlan}, ${polInterest}, ${followUp}, ${JSON.stringify(r.answers)}::jsonb
+        )
+      `;
+    } catch (e) {
+      console.error(`Failed to insert ${r.id}:`, e);
+    }
+  }
+
+  console.log('Successfully seeded survey_responses!');
+}
+
+main();

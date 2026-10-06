@@ -76,6 +76,14 @@ C:\Users\Hp\Documents\Codes\hospitality-network-survey-draft\
 │       ├── survey.ts        # Database queries for inserting/fetching survey_responses.
 │       └── auth.ts          # Database queries for fetching admin_users and login_attempts.
 │
+├── app/admin/(console)/
+│   └── users/
+│       ├── page.tsx         # ✅ BUILT — Admin Users management page (table + add dialog).
+│       └── actions.ts       # ✅ BUILT — Server Action: hashes password, creates user entry.
+│
+├── components/admin/
+│   └── AddUserDialog.tsx    # ✅ BUILT — Client dialog: username + password form with show/hide.
+│
 └── scripts/
     └── migrate.mjs          # A script to run schema.sql against the Neon DB directly.
 ```
@@ -85,9 +93,9 @@ C:\Users\Hp\Documents\Codes\hospitality-network-survey-draft\
 2. Create `lib/db/index.ts` to establish the connection pool.
 3. Use a script to execute the `schema.sql` directly on the Neon DB using the `DATABASE_URL`.
 4. Update `lib/auth/users.ts` and `lib/auth/throttle.ts` to query the database instead of the file system.
-5. **Build the User Management UI:**
-   - Create a new page at `app/admin/(console)/users/page.tsx`.
-   - Add "Admins" (or "Users") to the sidebar navigation (`components/admin/AppSidebar.tsx`).
-   - Create a table that lists all current admins (fetching from the `admin_users` table).
-   - Create an "Add Admin" form or modal.
-   - Create a Server Action (`addUserAction`) that takes a raw password from the form, hashes it securely on the server using `scrypt`, and inserts the new user into the database. This automates the credential generation entirely!
+5. **Upgrade the User Management UI for the DB** (the pages are already built at `app/admin/(console)/users/`):
+   - In `actions.ts`, replace the `getUsers()` / env-var logic with `SELECT * FROM admin_users`.
+   - Replace the `addAdminUserAction` env-var output with `INSERT INTO admin_users (username, salt, hash) VALUES ($1, $2, $3)`.
+   - Implement `deleteAdminUserAction` with `DELETE FROM admin_users WHERE username = $1`.
+   - Add a `created_at` column to the users table so the "Created" column on the UI shows a real timestamp.
+   - After these changes, adding/removing admins will be **instant with no server restart needed**.

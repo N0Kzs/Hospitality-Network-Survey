@@ -1,67 +1,106 @@
 import type { SurveyResponse, ResponseFilters } from './types'
-import { mockResponses } from './mock'
 import { isActiveInvestment, getLeadPriority } from './leads'
 import { sections } from '@/lib/survey/questions'
+import { sql } from '@/lib/db'
 
-function applyFilters(responses: SurveyResponse[], filters: ResponseFilters): SurveyResponse[] {
-  return responses.filter(r => {
-    if (filters.search) {
-      const s = filters.search.toLowerCase()
-      const c = (r.answers['q1'] as string || '').toLowerCase()
-      const n = (r.answers['q2'] as string || '').toLowerCase()
-      const e = (r.answers['q4'] as string || '').toLowerCase()
-      if (!c.includes(s) && !n.includes(s) && !e.includes(s)) return false
+function buildWhereClause(filters: ResponseFilters) {
+  const conditions = []
+  const params = []
+
+  if (filters.search) {
+    const s = `%${filters.search}%`
+    conditions.push(`(company ILIKE $${params.length + 1} OR respondent_name ILIKE $${params.length + 1} OR email ILIKE $${params.length + 1})`)
+    params.push(s)
+  }
+  
+  if (filters.q13) {
+    if (filters.q13 === 'active') {
+      conditions.push(`investment_plan IN ('Yes, investment is already approved', 'Yes, investment is planned but not yet approved', 'Investment is currently being evaluated')`)
+    } else {
+      conditions.push(`investment_plan = $${params.length + 1}`)
+      params.push(filters.q13)
     }
-    
-    if (filters.q13) {
-      if (filters.q13 === 'active') {
-        if (!isActiveInvestment(r)) return false
-      } else {
-        if (r.answers['q13'] !== filters.q13) return false
-      }
-    }
-    
-    if (filters.q26 && r.answers['q26'] !== filters.q26) return false
-    if (filters.q41 && r.answers['q41'] !== filters.q41) return false
-    if (filters.q5 && r.answers['q5'] !== filters.q5) return false
-    
-    if (filters.from) {
-      if (new Date(r.submittedAt) < new Date(filters.from)) return false
-    }
-    if (filters.to) {
-      const toDate = new Date(filters.to)
-      toDate.setHours(23, 59, 59, 999)
-      if (new Date(r.submittedAt) > toDate) return false
-    }
-    
-    return true
-  })
+  }
+  
+  if (filters.q26) {
+    conditions.push(`pol_interest = $${params.length + 1}`)
+    params.push(filters.q26)
+  }
+  
+  if (filters.q41) {
+    conditions.push(`follow_up = $${params.length + 1}`)
+    params.push(filters.q41)
+  }
+  
+  if (filters.q5) {
+    conditions.push(`org_role = $${params.length + 1}`)
+    params.push(filters.q5)
+  }
+  
+  if (filters.from) {
+    conditions.push(`submitted_at >= $${params.length + 1}`)
+    params.push(filters.from)
+  }
+  
+  if (filters.to) {
+    const toDate = new Date(filters.to)
+    toDate.setHours(23, 59, 59, 999)
+    conditions.push(`submitted_at <= $${params.length + 1}`)
+    params.push(toDate.toISOString())
+  }
+
+  const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
+  return { where, params }
+}
+
+function mapRow(row: any): SurveyResponse {
+  return {
+    id: row.id,
+    submittedAt: new Date(row.submitted_at).toISOString(),
+    answers: row.answers || {}
+  }
 }
 
 export async function listResponses(filters: ResponseFilters): Promise<{ rows: SurveyResponse[]; total: number }> {
-  const filtered = applyFilters(mockResponses, filters)
+  const { where, params } = buildWhereClause(filters)
+  
   const page = filters.page || 1
   const pageSize = filters.pageSize || 20
-  const start = (page - 1) * pageSize
-  const end = start + pageSize
-  
+  const offset = (page - 1) * pageSize
+
+  // The neon client allows template tags, but for dynamic WHERE clauses we can use sql(query, params)
+  const countQuery = `SELECT count(*) as count FROM survey_responses ${where}`
+  const dataQuery = `SELECT * FROM survey_responses ${where} ORDER BY submitted_at DESC LIMIT ${pageSize} OFFSET ${offset}`
+
+  const [countRes, dataRes] = await Promise.all([
+    sql.query(countQuery, params),
+    sql.query(dataQuery, params)
+  ])
+
   return {
-    rows: filtered.slice(start, end),
-    total: filtered.length
+    rows: dataRes.map(mapRow),
+    total: parseInt(countRes[0].count, 10)
   }
 }
 
 export async function listAllResponses(filters: ResponseFilters): Promise<SurveyResponse[]> {
-  return applyFilters(mockResponses, filters)
+  const { where, params } = buildWhereClause(filters)
+  const query = `SELECT * FROM survey_responses ${where} ORDER BY submitted_at DESC`
+  const dataRes = await sql.query(query, params)
+  return dataRes.map(mapRow)
 }
 
 export async function getResponse(id: string): Promise<SurveyResponse | null> {
-  const r = mockResponses.find(x => x.id === id)
-  return r || null
+  const res = await sql`SELECT * FROM survey_responses WHERE id = ${id}`
+  if (res.length === 0) return null
+  return mapRow(res[0])
 }
 
 export async function getStats() {
-  const total = mockResponses.length
+  const allResponses = await sql`SELECT * FROM survey_responses`
+  const mapped = allResponses.map(mapRow)
+  
+  const total = mapped.length
   const now = new Date('2026-10-06T00:00:00Z').getTime()
   const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000)
   
@@ -70,7 +109,7 @@ export async function getStats() {
   let wantContact = 0
   let interestedPOL = 0
   
-  mockResponses.forEach(r => {
+  mapped.forEach(r => {
     if (new Date(r.submittedAt).getTime() >= sevenDaysAgo) last7Days++
     if (isActiveInvestment(r)) activeInvestment++
     if (r.answers['q41'] === 'Yes, please contact me') wantContact++
@@ -86,7 +125,7 @@ export async function getStats() {
     daily[d] = 0
   }
   
-  mockResponses.forEach(r => {
+  mapped.forEach(r => {
     const d = r.submittedAt.split('T')[0]
     if (daily[d] !== undefined) {
       daily[d]++
@@ -97,7 +136,7 @@ export async function getStats() {
   
   const activePercent = total > 0 ? Math.round((activeInvestment / total) * 100) : 0
   
-  const leads = mockResponses.filter(r => getLeadPriority(r) !== 'None')
+  const leads = mapped.filter(r => getLeadPriority(r) !== 'None')
   const hotLeads = leads.filter(r => getLeadPriority(r) === 'Hot').slice(0, 5)
 
   return {
@@ -113,9 +152,8 @@ export async function getStats() {
 }
 
 export async function countBy(questionId: string, filters?: ResponseFilters): Promise<{ label: string; count: number }[]> {
-  const baseResponses = filters ? applyFilters(mockResponses, filters) : mockResponses
+  const mapped = filters ? await listAllResponses(filters) : (await sql`SELECT * FROM survey_responses`).map(mapRow)
   
-  // Find the question options to preserve order and show 0s
   let options: string[] = []
   for (const s of sections) {
     const q = s.questions.find(x => x.id === questionId)
@@ -128,7 +166,7 @@ export async function countBy(questionId: string, filters?: ResponseFilters): Pr
   const counts: Record<string, number> = {}
   options.forEach(o => counts[o] = 0)
 
-  baseResponses.forEach(r => {
+  mapped.forEach(r => {
     const val = r.answers[questionId]
     if (Array.isArray(val)) {
       val.forEach(v => {

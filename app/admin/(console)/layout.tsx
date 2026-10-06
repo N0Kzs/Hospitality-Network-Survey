@@ -43,9 +43,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <SidebarProvider>
         <AppSidebar session={session} hotLeadsCount={hotLeadsCount} />
         
-        <div className="flex flex-col flex-1 min-h-screen min-w-0">
+        <div className="flex flex-col flex-1 min-h-screen min-w-0 pt-16">
           {/* Top Navigation Bar */}
-          <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
+          <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6 w-full">
             <SidebarTrigger />
             
             <div className="flex-1 flex justify-center">
@@ -62,11 +62,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
             <div className="flex items-center gap-4">
               <DropdownMenu>
-                <DropdownMenuTrigger className="rounded-full h-8 w-8 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="" alt="@admin" />
-                    <AvatarFallback className="bg-primary/10 text-primary">{session.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
+                <DropdownMenuTrigger className="h-8 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md">
+                  <img src="/Logo/YFC.webp" alt="YFC" className="h-8 w-auto object-contain" />
                   <span className="sr-only">Toggle user menu</span>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

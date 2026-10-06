@@ -3,21 +3,27 @@ import { promisify } from 'node:util'
 
 const scryptAsync = promisify(crypto.scrypt)
 
-function getUsers() {
-  const usersStr = process.env.ADMIN_USERS
-  if (!usersStr) return []
-  return usersStr.split(',').map(entry => {
-    const [username, salt, hash] = entry.split(':')
-    return { username, salt, hash }
-  }).filter(u => u.username && u.salt && u.hash)
-}
+import { sql } from '@/lib/db'
 
 export async function verifyLogin(username: string, password: string): Promise<string | null> {
-  const users = getUsers()
   const cleanUsername = username.trim().toLowerCase()
-  const user = users.find(u => u.username.toLowerCase() === cleanUsername)
+  let user: { username: string; salt: string; hash: string } | undefined
 
-  // Dummy salt and hash to prevent timing attacks
+  try {
+    const result = await sql`
+      SELECT username, salt, hash 
+      FROM admin_users 
+      WHERE username = ${cleanUsername}
+    `
+    if (result.length > 0) {
+      user = result[0] as { username: string; salt: string; hash: string }
+    }
+  } catch (error) {
+    console.error('Failed to query user:', error)
+    return null
+  }
+
+  // Dummy salt and hash to prevent timing attacks if user doesn't exist
   const saltHex = user ? user.salt : '00000000000000000000000000000000'
   const targetHashHex = user ? user.hash : '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
   

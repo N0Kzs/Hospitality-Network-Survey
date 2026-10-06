@@ -17,14 +17,15 @@ interface Saved {
   sectionId: string
 }
 
-export default function Survey() {
+export default function Survey({ initialAnswers }: { initialAnswers?: any }) {
   const [phase, setPhase] = useState<Phase>('welcome')
   const [sectionId, setSectionId] = useState(sections[0].id)
-  const [answers, setAnswers] = useState<Answers>({})
+  const [answers, setAnswers] = useState<Answers>(initialAnswers || {})
   const [errors, setErrors] = useState<Errors>({})
   const [saved, setSaved] = useState<Saved | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [overwritePrompt, setOverwritePrompt] = useState(false)
 
   const headingRef = useRef<HTMLHeadingElement>(null)
   const honeypotRef = useRef<HTMLInputElement>(null)
@@ -37,6 +38,10 @@ export default function Survey() {
 
   // Load any saved progress (this device only).
   useEffect(() => {
+    if (initialAnswers) {
+      setPhase('survey')
+      return
+    }
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (!raw) return
@@ -47,7 +52,7 @@ export default function Survey() {
     } catch {
       /* storage unavailable or corrupted: start fresh */
     }
-  }, [])
+  }, [initialAnswers])
 
   // Save progress while the survey is in progress.
   useEffect(() => {
@@ -124,8 +129,7 @@ export default function Survey() {
     else void submit()
   }
 
-  async function submit() {
-    // Honeypot: real people never fill this hidden field.
+  async function submit(overwrite = false) {
     if (honeypotRef.current?.value) {
       finish()
       return
@@ -136,8 +140,18 @@ export default function Survey() {
       const res = await fetch('/api/survey', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ submittedAt: new Date().toISOString(), answers: visibleAnswers(answers) }),
+        body: JSON.stringify({ 
+          submittedAt: new Date().toISOString(), 
+          answers: visibleAnswers(answers),
+          overwrite
+        }),
       })
+      
+      if (res.status === 409) {
+        setOverwritePrompt(true)
+        return
+      }
+      
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       finish()
     } catch {
@@ -199,6 +213,14 @@ export default function Survey() {
               {saved && (
                 <button type="button" className="btn-ghost" onClick={() => start(true)}>
                   Start over
+                </button>
+              )}
+              {initialAnswers && (
+                <button type="button" className="btn-ghost" onClick={() => {
+                  setAnswers({})
+                  setPhase('welcome')
+                }}>
+                  Discard edits
                 </button>
               )}
               <a href="/admin" className="btn-ghost" style={{ border: '1px solid var(--line-strong)', padding: '12px 20px', borderRadius: '10px' }}>
@@ -327,6 +349,41 @@ export default function Survey() {
             </div>
             <p className="save-note">Progress is saved on this device.</p>
           </form>
+
+          {overwritePrompt && (
+            <div style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999,
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <div style={{
+                backgroundColor: 'white', padding: '24px', borderRadius: '12px',
+                maxWidth: '400px', width: '90%', boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+              }}>
+                <h3 style={{ marginTop: 0, fontSize: '18px', fontWeight: 600, color: '#1B2A73' }}>Overwrite Existing Response?</h3>
+                <p style={{ color: '#444', lineHeight: 1.5, marginBottom: '24px' }}>
+                  An existing survey response was found for this email address. Would you like to overwrite it with your new answers?
+                </p>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button 
+                    onClick={() => setOverwritePrompt(false)}
+                    style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #ccc', borderRadius: '6px', cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setOverwritePrompt(false)
+                      submit(true)
+                    }}
+                    style={{ padding: '8px 16px', background: '#6A1FD0', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                  >
+                    Yes, Overwrite
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>

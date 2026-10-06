@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Activity, LayoutDashboard, Settings, Users, Sheet } from "lucide-react"
+import { Activity, LayoutDashboard, Settings, Users, Sheet, UserCog } from "lucide-react"
 
 import {
   Sidebar,
@@ -41,6 +41,11 @@ const items = [
     icon: Sheet,
   },
   {
+    title: "Admin Users",
+    url: "/admin/users",
+    icon: UserCog,
+  },
+  {
     title: "Settings",
     url: "/admin/settings",
     icon: Settings,
@@ -51,13 +56,7 @@ export function AppSidebar({ session, hotLeadsCount }: { session: string, hotLea
   const pathname = usePathname()
 
   return (
-    <Sidebar>
-      <SidebarHeader className="flex h-16 shrink-0 flex-row items-center justify-between border-b border-sidebar-border/50 px-4">
-        <div className="flex items-center gap-2">
-          <img src="/Logo/YFC.webp" alt="YFC" className="h-6 w-auto object-contain" />
-        </div>
-      </SidebarHeader>
-      
+    <Sidebar className="pt-16">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
@@ -83,8 +82,8 @@ export function AppSidebar({ session, hotLeadsCount }: { session: string, hotLea
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter className="mt-auto p-4 border-t border-sidebar-border/50">
-        <div className="text-xs text-sidebar-accent-foreground mb-2">
+      <SidebarFooter className="mt-auto p-4 pb-6">
+        <div className="text-xs text-sidebar-accent-foreground mb-4">
           Signed in as <strong>{session}</strong>
         </div>
         <LogoutForm />
