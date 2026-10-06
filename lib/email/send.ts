@@ -12,7 +12,9 @@ export async function sendConfirmationEmail(responseId: string, answers: Answers
   if (!email) return
 
   // In development or if no API key is provided, just log to the console
-  const resendApiKey = process.env.RESEND_API_KEY
+  let resendApiKey = process.env.RESEND_API_KEY
+  if (resendApiKey) resendApiKey = resendApiKey.replace(/^["']|["']$/g, '').trim()
+  
   if (!resendApiKey) {
     console.log(`[Email Mock] Would have sent confirmation to ${email}`)
     console.log(`[Email Mock] Edit link: ${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}?edit=${responseId}`)
@@ -52,7 +54,9 @@ export async function sendConfirmationEmail(responseId: string, answers: Answers
     console.log(`[Email] Successfully sent confirmation to ${email}`)
 
     // --- PHASE 5: Send Internal Company Alert ---
-    const notifyTo = process.env.LEAD_NOTIFY_TO
+    let notifyTo = process.env.LEAD_NOTIFY_TO
+    if (notifyTo) notifyTo = notifyTo.replace(/^["']|["']$/g, '').trim()
+    
     if (notifyTo) {
       // 1. Get total number of respondents
       let totalCount = 0
