@@ -13,7 +13,6 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
       <div className="login-card">
         <div className="login-header">
           <img src="/Logo/YFC.webp" alt="YFC Logo" className="login-logo yfc" />
-          <img src="/Logo/Lightera.webp" alt="Lightera Logo" className="login-logo lightera" />
         </div>
         
         <h1 className="login-title">Admin Sign In</h1>
