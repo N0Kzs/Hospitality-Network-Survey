@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
-import { Buffer } from 'node:buffer'
 
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
@@ -22,7 +21,8 @@ export async function proxy(request: NextRequest) {
 
   if (token && secretHex) {
     try {
-      const secret = Buffer.from(secretHex, 'hex')
+      // Decode hex manually for strict Edge runtime compatibility
+      const secret = new Uint8Array(secretHex.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || [])
       await jwtVerify(token, secret)
       isValid = true
     } catch {

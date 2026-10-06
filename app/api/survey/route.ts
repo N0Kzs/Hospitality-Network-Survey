@@ -71,10 +71,8 @@ export async function POST(request: Request) {
 
     // Phase 5: Send confirmation email
     // This is fired asynchronously so it doesn't block the UI response
-    import('@/lib/survey/types').then(({ Answers }) => {
-      sendConfirmationEmail(id, answers as any).catch((err) => {
-        console.error('[survey] Failed to send email:', err)
-      })
+    sendConfirmationEmail(id, answers as any).catch((err) => {
+      console.error('[survey] Failed to send email:', err)
     })
 
     return NextResponse.json({ ok: true, id }, { status: 201 })
