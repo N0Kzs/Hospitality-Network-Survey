@@ -27,7 +27,7 @@ export async function sendConfirmationEmail(responseId: string, answers: Answers
     const editUrl = `${baseUrl}?edit=${responseId}`
 
     await resend.emails.send({
-      from: 'YFC-BonEagle Survey <onboarding@resend.dev>', // Resend sandbox testing email
+      from: process.env.EMAIL_FROM || 'YFC-BonEagle Survey <survey@yfcboneagle.com>', // Verified custom domain
       to: [email],
       subject: 'Thank you for completing the Hospitality Network Survey',
       html: `
@@ -54,7 +54,7 @@ export async function sendConfirmationEmail(responseId: string, answers: Answers
     const notifyTo = process.env.LEAD_NOTIFY_TO
     if (notifyTo) {
       await resend.emails.send({
-        from: 'YFC-BonEagle Survey <onboarding@resend.dev>', 
+        from: process.env.EMAIL_FROM || 'YFC-BonEagle Survey <survey@yfcboneagle.com>',
         to: [notifyTo],
         subject: `New Survey Response from ${name} (${answers.q1 || 'Unknown Company'})`,
         html: `

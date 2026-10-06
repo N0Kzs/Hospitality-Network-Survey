@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
+import { Buffer } from 'node:buffer'
 
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
@@ -14,7 +15,8 @@ export async function proxy(request: NextRequest) {
   }
 
   const token = request.cookies.get('lightera_admin_session')?.value
-  const secretHex = process.env.SESSION_SECRET
+  let secretHex = process.env.SESSION_SECRET
+  if (secretHex) secretHex = secretHex.replace(/^["']|["']$/g, '').trim()
 
   let isValid = false
 

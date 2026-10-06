@@ -2,8 +2,9 @@ import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 
 const getSecret = () => {
-  const secret = process.env.SESSION_SECRET
+  let secret = process.env.SESSION_SECRET
   if (!secret) return null
+  secret = secret.replace(/^["']|["']$/g, '').trim()
   try {
     return Buffer.from(secret, 'hex')
   } catch {
