@@ -70,10 +70,13 @@ export async function POST(request: Request) {
     }
 
     // Phase 5: Send confirmation email
-    // This is fired asynchronously so it doesn't block the UI response
-    sendConfirmationEmail(id, answers as any).catch((err) => {
+    // On Vercel, we MUST await this, otherwise Vercel kills the Serverless function
+    // before the second email has a chance to finish querying the DB and sending.
+    try {
+      await sendConfirmationEmail(id, answers as any)
+    } catch (err) {
       console.error('[survey] Failed to send email:', err)
-    })
+    }
 
     return NextResponse.json({ ok: true, id }, { status: 201 })
   } catch (error) {
