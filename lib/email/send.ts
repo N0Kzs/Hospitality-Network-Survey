@@ -6,7 +6,7 @@ import { sections } from '@/lib/survey/questions'
 // Note: To use this in production, you must set RESEND_API_KEY in .env.local
 // and install the 'resend' package: npm install resend
 
-export async function sendConfirmationEmail(responseId: string, answers: Answers) {
+export async function sendConfirmationEmail(responseId: string, answers: Answers, requestOrigin?: string) {
   const email = answers.q4 as string
   const name = answers.q2 as string
   
@@ -26,8 +26,8 @@ export async function sendConfirmationEmail(responseId: string, answers: Answers
     const { Resend } = await import('resend')
     const resend = new Resend(resendApiKey)
 
-    // Ensure NEXT_PUBLIC_BASE_URL is set in your environment variables for production
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    // Use the dynamically detected requestOrigin if available, otherwise fallback to env variable or localhost
+    const baseUrl = requestOrigin || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
     const editUrl = `${baseUrl}?edit=${responseId}`
 
     const { data, error } = await resend.emails.send({

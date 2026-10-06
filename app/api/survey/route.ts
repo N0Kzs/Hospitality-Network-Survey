@@ -72,8 +72,9 @@ export async function POST(request: Request) {
     // Phase 5: Send confirmation email
     // On Vercel, we MUST await this, otherwise Vercel kills the Serverless function
     // before the second email has a chance to finish querying the DB and sending.
+    const origin = new URL(request.url).origin
     try {
-      await sendConfirmationEmail(id, answers as any)
+      await sendConfirmationEmail(id, answers as any, origin)
     } catch (err) {
       console.error('[survey] Failed to send email:', err)
     }
