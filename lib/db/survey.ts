@@ -64,3 +64,15 @@ export async function updateSurveyResponse(id: string, answers: Record<string, u
   `
   return id
 }
+
+export async function updateEmailStatus(id: string, status: string, messageId?: string | null, error?: string | null) {
+  await sql`
+    UPDATE survey_responses
+    SET 
+      email_status = ${status},
+      email_message_id = ${messageId || null},
+      email_error = ${error || null},
+      email_sent_at = ${status === 'sent' ? sql`now()` : null}
+    WHERE id = ${id}
+  `
+}

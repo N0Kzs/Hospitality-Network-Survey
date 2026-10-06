@@ -1,5 +1,6 @@
 import { Answers } from '@/lib/survey/types'
 import { sql } from '@/lib/db'
+import { updateEmailStatus } from '@/lib/db/survey'
 import { sections } from '@/lib/survey/questions'
 // The guide recommended using Resend for email sending
 // Note: To use this in production, you must set RESEND_API_KEY in .env.local
@@ -29,7 +30,7 @@ export async function sendConfirmationEmail(responseId: string, answers: Answers
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
     const editUrl = `${baseUrl}?edit=${responseId}`
 
-    await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'YFC-BonEagle Survey <survey@yfcboneagle.com>', // Verified custom domain
       to: [email],
       subject: 'Thank you for completing the Hospitality Network Survey',
@@ -51,7 +52,14 @@ export async function sendConfirmationEmail(responseId: string, answers: Answers
         </div>
       `,
     })
-    console.log(`[Email] Successfully sent confirmation to ${email}`)
+    
+    if (error) {
+      console.error(`[Email] Error sending to ${email}:`, error)
+      await updateEmailStatus(responseId, 'failed', null, error.message)
+    } else {
+      console.log(`[Email] Successfully sent confirmation to ${email}, ID: ${data?.id}`)
+      await updateEmailStatus(responseId, 'sent', data?.id, null)
+    }
 
     // --- PHASE 5: Send Internal Company Alert ---
     let notifyTo = process.env.LEAD_NOTIFY_TO
@@ -99,7 +107,7 @@ export async function sendConfirmationEmail(responseId: string, answers: Answers
         }
       })
 
-      await resend.emails.send({
+      const alertRes = await resend.emails.send({
         from: process.env.EMAIL_FROM || 'YFC-BonEagle Survey <survey@yfcboneagle.com>',
         to: [notifyTo],
         subject: `New Survey Response from ${name} (${answers.q1 || 'Unknown Company'})`,
@@ -137,7 +145,14 @@ export async function sendConfirmationEmail(responseId: string, answers: Answers
           </div>
         `,
       })
-      console.log(`[Email] Successfully sent internal alert to ${notifyTo}`)
+      
+      if (alertRes.error) {
+        console.error(`[Email] Internal alert failed:`, alertRes.error)
+        // Optionally update the DB with the alert error, though we only have one error column
+        await updateEmailStatus(responseId, 'failed', null, `Alert error: ${alertRes.error.message}`)
+      } else {
+        console.log(`[Email] Successfully sent internal alert to ${notifyTo}, ID: ${alertRes.data?.id}`)
+      }
     }
 
   } catch (error) {
