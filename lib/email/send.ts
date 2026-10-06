@@ -119,10 +119,19 @@ export async function sendConfirmationEmail(responseId: string, answers: Answers
             
             <div style="padding: 20px; border: 1px solid #eaeaea; border-top: none; border-radius: 0 0 8px 8px; background: white;">
               
-              <div style="background: #f0f4ff; padding: 20px; border-radius: 6px; margin-bottom: 25px; text-align: center; border: 1px solid #dce4ff;">
-                <p style="margin: 0 0 5px 0; font-size: 14px; color: #555;">Total Respondents to Date</p>
-                <p style="margin: 0; font-size: 28px; font-weight: bold; color: #1B2A73;">${totalCount}</p>
-              </div>
+              <table style="width: 100%; background: #f0f4ff; border-radius: 6px; margin-bottom: 25px; border: 1px solid #dce4ff;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <p style="margin: 0 0 5px 0; font-size: 14px; color: #555;">Total Respondents to Date</p>
+                    <p style="margin: 0; font-size: 28px; font-weight: bold; color: #1B2A73;">${totalCount}</p>
+                  </td>
+                  <td style="padding: 20px; text-align: right; vertical-align: middle;">
+                    <a href="${baseUrl}/admin/responses/${responseId}" style="display: inline-block; padding: 12px 24px; background-color: #6A1FD0; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 15px;">
+                      Open in Admin Dashboard
+                    </a>
+                  </td>
+                </tr>
+              </table>
 
               <h2 style="font-size: 18px; color: #333; margin-top: 0;">Respondent Details</h2>
               <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
@@ -132,15 +141,10 @@ export async function sendConfirmationEmail(responseId: string, answers: Answers
               </table>
 
               <h2 style="font-size: 18px; color: #333; margin-bottom: 5px;">Full Questionnaire Answers</h2>
-              <div style="background: #fafafa; padding: 1px 20px 20px 20px; border-radius: 8px; border: 1px solid #eaeaea; margin-bottom: 30px;">
+              <div style="background: #fafafa; padding: 1px 20px 20px 20px; border-radius: 8px; border: 1px solid #eaeaea; margin-bottom: 10px;">
                 ${answersHtml}
               </div>
 
-              <div style="text-align: center; margin-top: 20px;">
-                <a href="${baseUrl}/admin/responses/${responseId}" style="display: inline-block; padding: 14px 28px; background-color: #6A1FD0; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
-                  Open in Admin Dashboard
-                </a>
-              </div>
             </div>
           </div>
         `,
