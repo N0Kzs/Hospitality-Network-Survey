@@ -20,7 +20,7 @@ export const sections: Section[] = [
         id: 'q6',
         type: 'single',
         prompt: 'Number of hospitality properties in the Philippines',
-        options: ['1', '2–5', '6–10', '11–20', 'More than 20']
+        options: ['1', '2–5', '6–10', '11–20', 'More than 20', 'Other']
       },
       {
         id: 'q7',
