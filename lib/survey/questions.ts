@@ -95,7 +95,7 @@ export const sections: Section[] = [
         id: 'q15',
         type: 'single',
         prompt: 'How many properties are currently being considered?',
-        options: ['1', '2–3', '4–5', '6–10', 'More than 10', 'Not yet defined']
+        options: ['1', '2–3', '4–5', '6–10', 'More than 10', 'Not yet defined', 'Other']
       },
       {
         id: 'q16',
@@ -113,7 +113,7 @@ export const sections: Section[] = [
         id: 'q18',
         type: 'single',
         prompt: 'At what stage is the project currently?',
-        options: ['Concept / initial planning', 'Feasibility study', 'Technology evaluation', 'Budgeting', 'Design', 'Tender / RFP preparation', 'Vendor selection', 'Procurement', 'Installation / deployment', 'Not yet started']
+        options: ['Concept / initial planning', 'Feasibility study', 'Technology evaluation', 'Budgeting', 'Design', 'Tender / RFP preparation', 'Vendor selection', 'Procurement', 'Installation / deployment', 'Not yet started', 'Other']
       },
       {
         id: 'q19',
@@ -150,7 +150,7 @@ export const sections: Section[] = [
         id: 'q23',
         type: 'single',
         prompt: 'Approximately how many properties could potentially require investment?',
-        options: ['1', '2–3', '4–5', '6–10', 'More than 10', 'Not yet defined']
+        options: ['1', '2–3', '4–5', '6–10', 'More than 10', 'Not yet defined', 'Other']
       },
       {
         id: 'q24',
@@ -225,7 +225,7 @@ export const sections: Section[] = [
         id: 'q33',
         type: 'single',
         prompt: 'At what stage are network infrastructure vendors typically involved?',
-        options: ['Concept / design stage', 'Specification stage', 'Budgeting stage', 'Tender stage', 'Vendor selection', 'Procurement', 'Installation', 'Only when problems occur']
+        options: ['Concept / design stage', 'Specification stage', 'Budgeting stage', 'Tender stage', 'Vendor selection', 'Procurement', 'Installation', 'Only when problems occur', 'Other']
       },
       {
         id: 'q34',
@@ -269,7 +269,7 @@ export const sections: Section[] = [
         id: 'q38',
         type: 'single',
         prompt: 'Approximately how many projects are currently planned?',
-        options: ['1', '2–3', '4–5', 'More than 5', 'Not yet defined']
+        options: ['1', '2–3', '4–5', 'More than 5', 'Not yet defined', 'Other']
       },
       {
         id: 'q39',
